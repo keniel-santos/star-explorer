@@ -140,5 +140,61 @@ local function dragShip(event)
     if ("began" == phase) then
         -- Set touch focus on the ship
         display.currentStage:setFocus(ship)
+        -- Store initial offset position
+        ship.touchOffsetX = event.x - ship.x
+
+    elseif ("moved" == phase) then
+        -- Move the ship to the new touch position
+        ship.x = event.x - ship.touchOffsetX
+
+    elseif ("ended" == phase or "canceled" == phase) then
+        -- Release touch focus on the ship
+        display.currentStage:setFocus(nil)
+    end
+
+    return true -- Prevents touch propagation to underlying events
+end
+
+ship:addEventListener("touch", dragShip)
+
+local function gameLoop()
+    -- Create new asteroid
+    createAsteroid()
+
+    -- Remove asteroids which have drifted off screen
+    for i = #asteroidsTable, 1, -1 do
+        local thisAsteroid = asteroidsTable[i]
+        
+        if (thisAsteroid.x < -100 or
+            thisAsteroid.x > display.contentWidth + 100 or
+            thisAsteroid.y < -100 or
+            thisAsteroid.y > display.contentHeight + 100)
+        then
+            display.remove(thisAsteroid)
+            table.remove(asteroidsTable, i)
+        end
+    end
+end
+
+gameLoopTimer = timer.performWithDelay(500, gameLoop, 0);
+
+local function restoreShip()
+    ship.isBodyActive = false
+    ship.x = display.contentCenterX
+    ship.y = display.contentHeight - 100
+
+    -- Fade in the ship
+    transition.to(ship, {alpha=1, time=4000,
+        onComplete = function()
+            ship.isBodyActive = true
+            died = false
+        end
+    })
+end
+
+local function onCollision(event)
+    if (event.phase == "began") then
+        local obj1 = event.object1
+        local obj2 = event.object2
     end
 end
